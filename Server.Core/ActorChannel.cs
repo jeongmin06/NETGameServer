@@ -26,7 +26,7 @@ public sealed class ActorChannel<TMessage> where TMessage : IActorMessage
     {
         await foreach (var message in _channel.Reader.ReadAllAsync(_token))
         {
-            message.Run();
+            await message.RunAsync();
         }
     }
 }

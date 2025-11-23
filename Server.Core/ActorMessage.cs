@@ -1,9 +1,9 @@
 ﻿namespace Server.Core;
 
-public class ActorMessage<TSelf>(TSelf actor, Action<TSelf> action) : IActorMessage where TSelf : class
+public class ActorMessage<TSelf>(TSelf actor, Func<TSelf, ValueTask> action) : IActorMessage where TSelf : class
 {
-    public void Run()
+    public async ValueTask RunAsync()
     {
-        action.Invoke(actor);
+        await action.Invoke(actor);
     }
 }

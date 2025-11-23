@@ -1,4 +1,4 @@
 public interface IActorMessage
 {
-    void Run();
+    ValueTask RunAsync();
 }
