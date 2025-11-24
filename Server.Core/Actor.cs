@@ -1,6 +1,6 @@
 namespace Server.Core;
 
-public abstract class Actor<TSelf>(ActorChannel<ActorMessage<TSelf>> actorChannel) where TSelf : Actor<TSelf>, new()
+public abstract class Actor<TSelf>(ActorChannel actorChannel) where TSelf : Actor<TSelf>, new()
 {
     public void Post(ActorMessage<TSelf> message)
     {

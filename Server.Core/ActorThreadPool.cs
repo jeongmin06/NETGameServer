@@ -5,19 +5,19 @@ using Server.Core;
 public sealed class ActorThreadPool
 {
     private readonly Channel<ActorThread> _actorThreadPool;
-    private readonly Channel<ActorChannel<IActorMessage>> _readyChannelQueue;
+    private readonly Channel<ActorChannel> _readyChannelQueue;
 
     public ActorThreadPool(int threadCount)
     {
         _actorThreadPool = Channel.CreateBounded<ActorThread>(threadCount);
-        _readyChannelQueue = Channel.CreateUnbounded<ActorChannel<IActorMessage>>(new UnboundedChannelOptions
+        _readyChannelQueue = Channel.CreateUnbounded<ActorChannel>(new UnboundedChannelOptions
         {
             SingleReader = false,
             SingleWriter = false
         });
     }
 
-    public async Task AddReadyChannel(ActorChannel<IActorMessage> actorChannel)
+    public async Task AddReadyChannel(ActorChannel actorChannel)
     {
         await _readyChannelQueue.Writer.WriteAsync(actorChannel);
     }

@@ -3,7 +3,7 @@ using Server.Core;
 
 public class ActorThread
 {
-    public async ValueTask RunAsync(ActorChannel<IActorMessage> actorChannel)
+    public async ValueTask RunAsync(ActorChannel actorChannel)
     {
         await actorChannel.RunAsync();
     }
