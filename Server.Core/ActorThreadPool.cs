@@ -27,7 +27,7 @@ public sealed class ActorThreadPool
         await foreach (var channel in _readyChannelQueue.Reader.ReadAllAsync())
         {
             var actorThread = await _actorThreadPool.Reader.ReadAsync();
-            await actorThread.RunAsync(channel);
+            actorThread.EnqueueChannel(channel);
             await _actorThreadPool.Writer.WriteAsync(actorThread);
         }
     }
