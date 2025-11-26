@@ -1,5 +1,4 @@
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using Server.Core;
 
 public sealed class ActorThreadPool
@@ -7,7 +6,9 @@ public sealed class ActorThreadPool
     private readonly Channel<ActorThread> _actorThreadPool;
     private readonly Channel<ActorChannel> _readyChannelQueue;
 
-    public ActorThreadPool(int threadCount)
+    public static ActorThreadPool Instance { get; } = new ActorThreadPool(30);
+
+    private ActorThreadPool(int threadCount)
     {
         _actorThreadPool = Channel.CreateBounded<ActorThread>(threadCount);
         _readyChannelQueue = Channel.CreateUnbounded<ActorChannel>(new UnboundedChannelOptions

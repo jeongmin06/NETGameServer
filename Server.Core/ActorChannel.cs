@@ -7,6 +7,8 @@ public sealed class ActorChannel
     private readonly Channel<IActorMessage> _channel;
     private readonly CancellationToken _token;
 
+    private bool _scheduled;
+
     public ActorChannel(CancellationToken token)
     {
         _token = token;
@@ -20,6 +22,11 @@ public sealed class ActorChannel
     public void Post(IActorMessage message)
     {
         _channel.Writer.WriteAsync(message, _token);
+
+        if (Interlocked.Exchange(ref _scheduled, true) == false)
+        {
+            _ = ActorThreadPool.Instance.AddReadyChannel(this);
+        }
     }
 
     public async ValueTask RunAsync()
