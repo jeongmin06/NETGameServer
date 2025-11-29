@@ -3,33 +3,25 @@ using Server.Core;
 
 public sealed class ActorThreadPool
 {
-    private readonly Channel<ActorThread> _actorThreadPool;
-    private readonly Channel<ActorChannel> _readyChannelQueue;
+    private readonly List<ActorThread> _actorThreadPool = new();
+    private readonly CancellationTokenSource _cts = new();
 
     public static ActorThreadPool Instance { get; } = new ActorThreadPool(30);
 
     private ActorThreadPool(int threadCount)
     {
-        _actorThreadPool = Channel.CreateBounded<ActorThread>(threadCount);
-        _readyChannelQueue = Channel.CreateUnbounded<ActorChannel>(new UnboundedChannelOptions
+        for (int i = 0; i < threadCount; i++)
         {
-            SingleReader = false,
-            SingleWriter = false
-        });
-    }
-
-    public async Task AddReadyChannel(ActorChannel actorChannel)
-    {
-        await _readyChannelQueue.Writer.WriteAsync(actorChannel);
-    }
-
-    public async Task RunProcessing()
-    {
-        await foreach (var channel in _readyChannelQueue.Reader.ReadAllAsync())
-        {
-            var actorThread = await _actorThreadPool.Reader.ReadAsync();
-            actorThread.EnqueueChannel(channel);
-            await _actorThreadPool.Writer.WriteAsync(actorThread);
+            var thread = new ActorThread(i, _cts.Token);
+            _actorThreadPool.Add(thread);
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        ActorThreadScheduler.Complete();
+
+        await Task.WhenAll(_actorThreadPool.Select(t => t.Completion));
     }
 }

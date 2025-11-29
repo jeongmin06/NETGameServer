@@ -4,6 +4,6 @@ public class ActorMessage<TSelf>(TSelf actor, Func<TSelf, ValueTask> action) : I
 {
     public async ValueTask RunAsync()
     {
-        await action.Invoke(actor);
+        await action(actor);
     }
 }

@@ -25,12 +25,29 @@ public sealed class ActorChannel
 
         if (Interlocked.Exchange(ref _scheduled, true) == false)
         {
-            _ = ActorThreadPool.Instance.AddReadyChannel(this);
+            ActorThreadScheduler.Schedule(this);
         }
     }
 
-    public async ValueTask RunAsync()
+    internal async ValueTask RunAsync(CancellationToken ct)
     {
+        while (!ct.IsCancellationRequested && !_token.IsCancellationRequested)
+        {
+            while (_channel.Reader.TryRead(out var msg))
+            {
+                await msg.RunAsync();
+            }
+
+            if (!_channel.Reader.TryPeek(out _))
+            {
+                if (Interlocked.Exchange(ref _scheduled, false) == false)
+                {
+                    ActorThreadScheduler.Schedule(this);
+                }
+            }
+            return;
+        }
+
         await foreach (var message in _channel.Reader.ReadAllAsync(_token))
         {
             await message.RunAsync();

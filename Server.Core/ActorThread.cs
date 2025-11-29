@@ -6,8 +6,7 @@ using Server.Core;
 public class ActorThread
 {
     private readonly CancellationToken _ct;
-    private readonly BlockingCollection<ActorChannel> _pendingQueue = new();
-    private readonly Thread _thread;
+    private readonly Task _workerTask;
     
     public string Name { get; }
 
@@ -15,19 +14,28 @@ public class ActorThread
     {
         _ct = ct;
         Name = $"ActorThread-{index}";
-        _thread = new Thread(Run);
+        _workerTask = Task.Factory.StartNew(
+            async () => await RunLoopAsync(ct),
+            ct,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default).Unwrap();
     }
 
-    public async void Run()
+    private async Task RunLoopAsync(CancellationToken ct)
     {
-        foreach (var channel in _pendingQueue.GetConsumingEnumerable(_ct))
+        try
         {
-            await channel.RunAsync();
+            while (!ct.IsCancellationRequested)
+            {
+                var channel = await ActorThreadScheduler.DequeueAsync(ct);
+                await channel.RunAsync(ct);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            
         }
     }
 
-    public void EnqueueChannel(ActorChannel channel)
-    {
-        _pendingQueue.TryAdd(channel);
-    }
+    public Task Completion => _workerTask;
 }
