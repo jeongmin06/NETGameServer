@@ -7,7 +7,7 @@ public sealed class SessionActor : Actor<SessionActor>
 {
     private readonly Socket _socket;
 
-    public string SessionId {get;}
+    public string SessionId { get; }
 
     public SessionActor(string sessionId, Socket socket, ActorChannel channel)
         : base(channel)
@@ -20,7 +20,7 @@ public sealed class SessionActor : Actor<SessionActor>
     {
         byte[] buffer = new byte[1024];
 
-        while (ct.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
             var received = await _socket.ReceiveAsync(buffer, SocketFlags.None, ct);
 
