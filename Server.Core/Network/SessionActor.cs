@@ -6,7 +6,6 @@ namespace Server.Core.Network;
 public sealed class SessionActor : Actor<SessionActor>
 {
     private readonly Socket _socket;
-    private readonly ActorChannel _channel;
 
     public string SessionId {get;}
 
@@ -15,7 +14,6 @@ public sealed class SessionActor : Actor<SessionActor>
     {
         SessionId = sessionId;
         _socket = socket;
-        _channel = channel;
     }
 
     public async Task StartReceiveLoop(CancellationToken ct)
