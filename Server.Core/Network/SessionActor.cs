@@ -1,5 +1,4 @@
 using System.Net.Sockets;
-using System.Text;
 
 namespace Server.Core.Network;
 
@@ -18,38 +17,38 @@ public sealed class SessionActor : Actor<SessionActor>
 
     public async Task StartReceiveLoop(CancellationToken ct)
     {
-        byte[] buffer = new byte[1024];
+        var reader = new PacketReader();
 
         while (!ct.IsCancellationRequested)
         {
-            var received = await _socket.ReceiveAsync(buffer, SocketFlags.None, ct);
-
-            if (received <= 0)
+            var mem = reader.GetWriteMemory(4096);
+            int receiveByte = await _socket.ReceiveAsync(mem, SocketFlags.None, ct);
+            if (receiveByte <= 0)
             {
-                // Need Logging
                 break;
             }
 
-            string text = Encoding.UTF8.GetString(buffer, 0, received);
-            var message = new ActorMessage<SessionActor>(this, async (actor) =>
+            reader.AdvanceWrite(receiveByte);
+            
+            while (reader.TryReadFrame(out var opcode, out var bodySpan))
             {
-               await actor.OnMessageReceived(text); 
-            });
-            Post(message);
+                byte[] body = bodySpan.ToArray();
+
+                Post(new ActorMessage<SessionActor>(this, async (self) =>
+                {
+                    await self.HandlePacketAsync(opcode, body, ct);
+                }));
+            }
         }
 
         _socket.Close();
     }
 
-    public ValueTask OnMessageReceived(string msg)
+    private async ValueTask HandlePacketAsync(ushort opcode, byte[] body, CancellationToken ct)
     {
-        Console.WriteLine($"[Session {SessionId}] RECV: {msg}");
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask<int> SendAsync(string msg, CancellationToken ct)
-    {
-        byte[] bytes = Encoding.UTF8.GetBytes(msg);
-        return _socket.SendAsync(bytes, SocketFlags.None, ct);
+        if (opcode == 1)    //ex. opcode 1 : Ping
+        {
+            await PacketWriter.SendAsync(_socket, 2, ReadOnlyMemory<byte>.Empty, ct);
+        }
     }
 }
