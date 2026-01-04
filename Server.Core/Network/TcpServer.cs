@@ -18,7 +18,7 @@ public sealed class TcpServer(ActorChannel channel, CancellationToken ct)
             var socket = await listener.AcceptAsync(ct);
             string sessionId = Guid.NewGuid().ToString("N");
 
-            var sessionActor = new SessionActor(sessionId, socket, channel);
+            var sessionActor = new SessionActor(sessionId, socket, channel, new PacketDispatcher());
 
             _ = sessionActor.StartReceiveLoop(ct);
         }

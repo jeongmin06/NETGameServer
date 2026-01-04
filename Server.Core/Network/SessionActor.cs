@@ -6,14 +6,16 @@ namespace Server.Core.Network;
 public sealed class SessionActor : Actor<SessionActor>
 {
     private readonly Socket _socket;
+    private readonly PacketDispatcher _dispatcher;
 
     public string SessionId { get; }
 
-    public SessionActor(string sessionId, Socket socket, ActorChannel channel)
+    public SessionActor(string sessionId, Socket socket, ActorChannel channel, PacketDispatcher dispatcher)
         : base(channel)
     {
         SessionId = sessionId;
         _socket = socket;
+        _dispatcher = dispatcher;
     }
 
     public async Task StartReceiveLoop(CancellationToken ct)
@@ -54,19 +56,8 @@ public sealed class SessionActor : Actor<SessionActor>
         _socket.Close();
     }
 
-    private async ValueTask HandlePacketAsync(ushort opcode, byte[] body, CancellationToken ct)
+    private ValueTask HandlePacketAsync(Packet packet, CancellationToken ct)
     {
-        if (opcode == 1)    //ex. opcode 1 : Ping
-        {
-            await PacketWriter.SendAsync(_socket, 2, ReadOnlyMemory<byte>.Empty, ct);
-        }
-    }
-
-    private async ValueTask HandlePacketAsync(Packet packet, CancellationToken ct)
-    {
-        if (packet.OpCode == 1)
-        {
-            await PacketWriter.SendAsync(_socket, 2, ReadOnlyMemory<byte>.Empty, ct);
-        }
+        return _dispatcher.DispatchAsync(this, packet, ct);
     }
 }
