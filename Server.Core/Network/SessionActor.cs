@@ -56,6 +56,11 @@ public sealed class SessionActor : Actor<SessionActor>
         _socket.Close();
     }
 
+    internal ValueTask SendAsync(ushort opcode, ReadOnlyMemory<byte> body, CancellationToken ct)
+    {
+        return PacketWriter.SendAsync(_socket, opcode, body, ct);
+    }
+
     private ValueTask HandlePacketAsync(Packet packet, CancellationToken ct)
     {
         return _dispatcher.DispatchAsync(this, packet, ct);
