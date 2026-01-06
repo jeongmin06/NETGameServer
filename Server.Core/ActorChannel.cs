@@ -7,7 +7,7 @@ public sealed class ActorChannel
     private readonly Channel<IActorMessage> _channel;
     private readonly CancellationToken _token;
 
-    private bool _scheduled;
+    private int _scheduled;
 
     public ActorChannel(CancellationToken token)
     {
@@ -21,9 +21,12 @@ public sealed class ActorChannel
 
     public void Post(IActorMessage message)
     {
-        _channel.Writer.WriteAsync(message, _token);
+        if (!_channel.Writer.TryWrite(message))
+        {
+            return;
+        }
 
-        if (Interlocked.Exchange(ref _scheduled, true) == false)
+        if (Interlocked.Exchange(ref _scheduled, 1) == 0)
         {
             ActorThreadScheduler.Schedule(this);
         }
@@ -38,19 +41,23 @@ public sealed class ActorChannel
                 await msg.RunAsync();
             }
 
-            if (!_channel.Reader.TryPeek(out _))
+            if (_channel.Reader.TryPeek(out _))
             {
-                if (Interlocked.Exchange(ref _scheduled, false) == false)
+                ActorThreadScheduler.Schedule(this);
+                return;
+            }
+
+            Interlocked.Exchange(ref _scheduled, 0);
+
+            if (_channel.Reader.TryPeek(out _))
+            {
+                if (Interlocked.Exchange(ref _scheduled, 1) == 0)
                 {
                     ActorThreadScheduler.Schedule(this);
                 }
             }
-            return;
-        }
 
-        await foreach (var message in _channel.Reader.ReadAllAsync(_token))
-        {
-            await message.RunAsync();
+            return;
         }
     }
 }
