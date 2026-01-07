@@ -4,7 +4,8 @@ namespace Server.Core;
 
 public static class ActorThreadScheduler
 {
-    private static readonly Channel<ActorChannel> _readyChannels = Channel.CreateUnbounded<ActorChannel>(new UnboundedChannelOptions
+    private static Channel<ActorChannel> _readyChannels = CreateChannel();
+    private static Channel<ActorChannel> CreateChannel() => Channel.CreateUnbounded<ActorChannel>(new UnboundedChannelOptions
     {
         SingleReader = false,
         SingleWriter = false
@@ -15,13 +16,25 @@ public static class ActorThreadScheduler
         _readyChannels.Writer.TryWrite(channel);
     }
 
-    internal static ValueTask<ActorChannel> DequeueAsync(CancellationToken ct)
+    internal static async ValueTask<ActorChannel?> DequeueAsync(CancellationToken ct)
     {
-        return _readyChannels.Reader.ReadAsync(ct);
+        try
+        {
+            return await _readyChannels.Reader.ReadAsync(ct);   
+        }
+        catch (ChannelClosedException)
+        {
+            return null;
+        }
     }
 
     public static void Complete()
     {
         _readyChannels.Writer.TryComplete();
+    }
+
+    internal static void ResetForTest()
+    {
+        _readyChannels = CreateChannel();
     }
 }

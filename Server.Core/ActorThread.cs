@@ -1,6 +1,4 @@
-
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
+using System.Threading.Channels;
 using Server.Core;
 
 public class ActorThread
@@ -28,10 +26,19 @@ public class ActorThread
             while (!ct.IsCancellationRequested)
             {
                 var channel = await ActorThreadScheduler.DequeueAsync(ct);
+                if (channel is null)
+                {
+                    break;
+                }
+
                 await channel.RunAsync(ct);
             }
         }
         catch (OperationCanceledException)
+        {
+            
+        }
+        catch (ChannelClosedException)
         {
             
         }
