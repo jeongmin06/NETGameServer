@@ -27,6 +27,8 @@ public static class PacketWriter
                 new ArraySegment<byte>(header, 0, HeaderSize),
                 body.Length == 0 ? default : new ArraySegment<byte>(body.ToArray(), 0, body.Length)
             };
+
+            await socket.SendAsync(segments, SocketFlags.None);
         }
         finally
         {
