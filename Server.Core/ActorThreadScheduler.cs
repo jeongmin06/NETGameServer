@@ -33,7 +33,7 @@ public static class ActorThreadScheduler
         _readyChannels.Writer.TryComplete();
     }
 
-    internal static void ResetForTest()
+    public static void ResetForTest()
     {
         _readyChannels = CreateChannel();
     }
