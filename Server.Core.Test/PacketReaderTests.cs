@@ -47,4 +47,32 @@ public class PacketReaderTests
         Assert.Equal((ushort)7, op);
         Assert.Equal(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }, body.ToArray());
     }
+
+    [Fact]
+    public void MultiplePacketsInOneReceive_ShouldParseAll()
+    {
+        var reader = new PacketReader();
+
+        var p1 = PacketTestHelper.MakePacket(1, new byte[] {1});
+        var p2 = PacketTestHelper.MakePacket(2, new byte[] {2, 2});
+        var p3 = PacketTestHelper.MakePacket(3, Array.Empty<byte>());
+
+        var all = p1.Concat(p2).Concat(p3).ToArray();
+
+        var m = reader.GetWriteMemory(all.Length);
+        all.CopyTo(m.Span);
+        reader.AdvanceWrite(all.Length);
+
+        Assert.True(reader.TryReadFrame(out var op1, out var b1));
+        Assert.True(reader.TryReadFrame(out var op2, out var b2));
+        Assert.True(reader.TryReadFrame(out var op3, out var b3));
+        Assert.False(reader.TryReadFrame(out _, out _));
+
+        Assert.Equal((ushort)1, op1);
+        Assert.Equal((ushort)2, op2);
+        Assert.Equal((ushort)3, op3);
+        Assert.Equal(new byte[] { 1 }, b1.ToArray());
+        Assert.Equal(new byte[] { 2, 2 }, b2.ToArray());
+        Assert.Empty(b3.ToArray());
+    }
 }
