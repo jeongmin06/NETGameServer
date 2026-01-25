@@ -3,18 +3,22 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+using Server.Core.Network;
+
 namespace WorldServer
 {
     public class WorldServerService : BackgroundService
     {
         private readonly ILogger<WorldServerService> _logger;
         private readonly TcpListener _listener;
+        private readonly PacketDispatcher _dispatcher;
+
         private readonly int _port = 5100;
 
-        public WorldServerService(ILogger<WorldServerService> logger)
+        public WorldServerService(ILogger<WorldServerService> logger, PacketDispatcher dispatcher)
         {
             _logger = logger;
-
+            _dispatcher = dispatcher;
             _listener = new TcpListener(IPAddress.Any, _port);
         }
 

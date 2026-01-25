@@ -482,3 +482,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+files.txt
+raw_urls_core_world_test.txt
+raw_urls.txt
