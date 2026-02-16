@@ -26,6 +26,7 @@ namespace WorldServer
         {
             _listener.Start();
             _logger.LogInformation("Start TCP Server: {Port}", _port);
+            _logger.LogDebug("PacketDispatcher initialized: {TypeName}", _dispatcher.GetType().Name);
             try
             {
                 while (!stoppingToken.IsCancellationRequested)
@@ -45,6 +46,8 @@ namespace WorldServer
 
         public override Task StopAsync(CancellationToken cancellationToken)
         {
+            _listener.Stop();
+            _logger.LogInformation("Stop TCP Server: {Port}", _port);
             return base.StopAsync(cancellationToken);
         }
     }

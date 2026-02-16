@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Server.Core/Server.Core.csproj" />
+    <ProjectReference Include="../WorldServer/WorldServer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

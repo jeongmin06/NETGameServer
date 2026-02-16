@@ -8,7 +8,9 @@ public class SchedulerTest
     [Fact]
     public async Task Scheduler_Processes_Only_Once_When_Scheduled_Many_Times()
     {
+        ActorThreadScheduler.ResetForTest();
         using var cts = new CancellationTokenSource();
+        var worker = new ActorThread(0, cts.Token);
         var channel = new ActorChannel(cts.Token);
 
         int runCount = 0;
@@ -25,11 +27,12 @@ public class SchedulerTest
             await ValueTask.CompletedTask;
         }));
 
-        _ = ActorThreadPool.Instance;
-
         await Task.Delay(500);
 
         Assert.Equal(2, Volatile.Read(ref runCount));
+
+        cts.Cancel();
+        await worker.Completion;
     }
 
     private sealed class TestMessage(Func<ValueTask> action) : IActorMessage

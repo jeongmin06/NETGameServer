@@ -29,7 +29,9 @@ public class SessionActorTest
     [Fact]
     public async Task SessionActor_Processes_Received_Message()
     {
+        ActorThreadScheduler.ResetForTest();
         using var cts = new CancellationTokenSource();
+        var worker = new ActorThread(0, cts.Token);
         var channel = new ActorChannel(cts.Token);
 
         var fake = new FakeSocket();
@@ -38,8 +40,6 @@ public class SessionActorTest
 
         var actor = new TestSessionActor("session-1", fake, channel);
 
-        _ = ActorThreadPool.Instance;
-        
         await actor.StartFakeReceiveLoop(cts.Token);
 
         await Task.Delay(200);
@@ -47,6 +47,9 @@ public class SessionActorTest
         Assert.Equal(2, actor.Received.Count);
         Assert.Equal("hello", actor.Received[0]);
         Assert.Equal("world", actor.Received[1]);
+
+        cts.Cancel();
+        await worker.Completion;
     }
 
     private sealed class TestSessionActor : Actor<TestSessionActor>
